@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Custom Utilities */
+@layer utilities {
+  .text-huge {
+    font-size: 5rem;
+    line-height: 1;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+}
