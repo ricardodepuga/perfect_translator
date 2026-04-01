@@ -1,7 +1,13 @@
 {
   "name": "web_app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Perfect Translator Desktop",
+  "author": "Ricardo Puga",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ricardodepuga/perfect_translator.git"
+  },
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
