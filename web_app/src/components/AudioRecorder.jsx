@@ -40,7 +40,7 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
           } else if (mediaRecorderRef.current.state !== 'inactive') {
              mediaRecorderRef.current.stop();
           }
-      } catch (_e) { /* ignore */ }
+      } catch { /* ignore */ }
     }
     mediaRecorderRef.current = null;
     if (streamRef.current) {
@@ -249,7 +249,6 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
   // Start/stop based on isActive or mode shift
   useEffect(() => {
     if (isActive) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       startContinuousCapture();
     } else {
       stopStream();

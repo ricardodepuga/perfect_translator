@@ -155,6 +155,7 @@ function App() {
         wsRef.current = null;
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening, sourceLang, targetLang, useRealtime, autoPlayVoice, usePivot, speakText]);
 
   const handleAudioData = async (data) => {
