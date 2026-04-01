@@ -283,7 +283,7 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
           </svg>
         </div>
         <span className={`text-xs transition-colors duration-300 ${speaking ? 'text-blue-400' : 'text-gray-600'}`}>
-          {speaking ? 'A ouvir...' : (listening ? 'Microfone ativo' : 'A iniciar...')}
+          {speaking ? 'Listening...' : (listening ? 'Microphone active' : 'Starting...')}
         </span>
       </div>
 

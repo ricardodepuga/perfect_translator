@@ -87,18 +87,18 @@ const SettingsModal = ({
                         
                         <div className="space-y-4 bg-gray-700/30 p-4 rounded-lg border border-gray-700">
                             <div>
-                                <label className="text-white font-medium block mb-1 text-sm">Modo de Processamento de Áudio</label>
+                                <label className="text-white font-medium block mb-1 text-sm">Audio Processing Mode</label>
                                 <select 
                                     value={useRealtime ? "realtime" : "standard"} 
                                     onChange={(e) => setUseRealtime(e.target.value === "realtime")} 
                                     className="w-full bg-gray-800 rounded px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 border-none outline-none"
                                 >
-                                    <option value="standard">Modo Standard (Económico, Gravação por Pedaços)</option>
-                                    <option value="realtime">Modo Realtime (Maior Custo, Streaming Imediato)</option>
+                                    <option value="standard">Standard Mode (Economical, Chunk Recording)</option>
+                                    <option value="realtime">Real-time Mode (Higher Cost, Instant Streaming)</option>
                                 </select>
                                 <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-                                    O <b>Modo Standard</b> consome ~0.009$/min e divide a fala por silêncio. 
-                                    O <b>Modo Realtime</b> garante transcrição instantânea mas consome ~0.06$/min (7x mais caro).
+                                    <b>Standard Mode</b> consumes ~$0.009/min and splits speech by silence. 
+                                    <b>Real-time Mode</b> guarantees instant transcription but consumes ~$0.06/min (7x more expensive).
                                 </p>
                             </div>
                             <div className="space-y-3 pt-3 mt-3 border-t border-gray-600">
@@ -149,13 +149,13 @@ const SettingsModal = ({
 
                     {/* Display Options */}
                     <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Secções Visíveis</h3>
+                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Visible Sections</h3>
                         <div className="space-y-2">
                             {/* Show Original */}
                             <div className="flex items-center justify-between bg-gray-700/30 p-3 rounded-lg border border-gray-700">
                                 <div>
-                                    <span className="text-white font-medium block">Mostrar Língua de Entrada</span>
-                                    <span className="text-xs text-gray-400">Esconde a captura de texto/áudio e o texto original.</span>
+                                    <span className="text-white font-medium block">Show Input Language</span>
+                                    <span className="text-xs text-gray-400">Toggle text/audio capture and the original text view.</span>
                                 </div>
                                 <button
                                     onClick={() => setShowOriginal(!showOriginal)}
@@ -172,8 +172,8 @@ const SettingsModal = ({
                             {/* Auto Play Voice */}
                             <div className="flex items-center justify-between bg-gray-700/30 p-3 rounded-lg border border-gray-700">
                                 <div>
-                                    <span className="text-white font-medium block">Leitura Automática de Voz</span>
-                                    <span className="text-xs text-gray-400">Ouve a tradução final em voz alta no browser.</span>
+                                    <span className="text-white font-medium block">Auto-Play Voice</span>
+                                    <span className="text-xs text-gray-400">Listen to the final translation out loud in the browser.</span>
                                 </div>
                                 <button
                                     onClick={() => setAutoPlayVoice(!autoPlayVoice)}
@@ -192,7 +192,7 @@ const SettingsModal = ({
 
                     {/* Audio Device */}
                     <div className="space-y-3">
-                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Dispositivo de Áudio</h3>
+                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Audio Device</h3>
                         <div className="bg-gray-700/30 p-4 rounded-lg border border-gray-700">
                             <div className="flex items-center gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -203,10 +203,10 @@ const SettingsModal = ({
                                     onChange={(e) => setAudioDeviceId(e.target.value)}
                                     className="flex-grow bg-gray-700 border-none rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 >
-                                    <option value="">Predefinido do sistema</option>
+                                    <option value="">System Default</option>
                                     {audioDevices.map((device) => (
                                         <option key={device.deviceId} value={device.deviceId}>
-                                            {device.label || `Microfone ${device.deviceId.slice(0, 8)}...`}
+                                            {device.label || `Microphone ${device.deviceId.slice(0, 8)}...`}
                                         </option>
                                     ))}
                                 </select>

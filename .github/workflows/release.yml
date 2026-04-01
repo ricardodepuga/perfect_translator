@@ -3,14 +3,14 @@ name: Auto Publish Releases (Mac & Win)
 on:
   push:
     branches:
-      - master
+      - main
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build na plataforma ${{ matrix.artifact_name }}
+    name: Build on ${{ matrix.artifact_name }}
     strategy:
       matrix:
         include:
@@ -29,20 +29,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     steps:
-      - name: Obter Código Central
+      - name: Checkout Code
         uses: actions/checkout@v4
       
-      - name: Instalar Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           
-      - name: Instalar Python 3.11
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Forjar Backend Python (PyInstaller nativo)
+      - name: Build Python Backend (Native PyInstaller)
         run: |
           cd execution
           python -m venv venv
@@ -56,7 +56,7 @@ jobs:
           pyinstaller --name api --onefile --hidden-import="websockets" --hidden-import="fastapi" --hidden-import="uvicorn" api.py
         shell: bash
 
-      - name: Acoplar API no Sistema Base do Electron
+      - name: Bundle API into Electron base system
         run: |
           mkdir -p web_app/bin
           if [ "$RUNNER_OS" == "Windows" ]; then
@@ -67,19 +67,19 @@ jobs:
           fi
         shell: bash
 
-      - name: Construir Lógica UI (Vite)
+      - name: Build UI Logic (Vite)
         working-directory: web_app
         run: |
           npm ci || npm install
           npm run build
 
-      - name: Caixa Final Electron-Builder
+      - name: Finalize Electron-Builder packaging
         working-directory: web_app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder ${{ matrix.electron_target }} --publish never
 
-      - name: Extrair Pacote Concluído
+      - name: Upload Completed Package
         uses: actions/upload-artifact@v4
         with:
           name: app-${{ matrix.artifact_name }}
@@ -89,26 +89,37 @@ jobs:
           retention-days: 1
 
   publish:
-    name: Compilar Artifacts e Lançar versão Alpha
+    name: Compile Artifacts and Launch Alpha version
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar Resultados do GitHub
+      - name: Download Results from GitHub
         uses: actions/download-artifact@v4
         with:
           path: distribuicoes/
           merge-multiple: true
       
-      - name: Fix Filenames (Identificar Arq)
+      - name: Fix Filenames (Identify Architecture)
         run: |
           cd distribuicoes
           for f in *.dmg; do mv "$f" "${f%.dmg}-mac-arm64.dmg" 2>/dev/null || true; done
           # Just an extra step if we want to organize files. Actually they will just be uploaded.
 
-      - name: Lançar Publicação Oficial (Release)
+      - name: Extract Commit Message for Release Notes
+        id: release_notes
+        run: |
+          echo "### 🚀 What's New" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          git log -1 --pretty=format:"%s" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "Commit details:" >> RELEASE_NOTES.md
+          git log -1 --pretty=format:"%b" >> RELEASE_NOTES.md
+
+      - name: Create Official Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Lançamento Oficial (Push para Master)"
+          name: "Perfect Translator v1.0.${{ github.run_number }}"
+          body_path: RELEASE_NOTES.md
           generate_release_notes: true
           tag_name: "v1.0.${{ github.run_number }}"
           files: distribuicoes/**/* 

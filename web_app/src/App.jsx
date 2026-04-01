@@ -93,14 +93,14 @@ function App() {
             if ((msg.type === "response.audio_transcript.delta" || msg.type === "response.text.delta") && msg.delta) {
               realtimeTranslationRef.current += msg.delta;
               setActiveRealtime({
-                original: { text: realtimeOriginalRef.current || "(Ouvindo...)", lang: sourceLang },
+                original: { text: "(Listening...)", lang: sourceLang },
                 pivot: null,
                 final: { text: realtimeTranslationRef.current, lang: targetLang }
               });
             } else if (msg.type === "conversation.item.input_audio_transcription.delta") {
               realtimeOriginalRef.current += (msg.delta || "");
               setActiveRealtime({
-                original: { text: realtimeOriginalRef.current || "(Ouvindo...)", lang: sourceLang },
+                original: { text: "(Listening...)", lang: sourceLang },
                 pivot: null,
                 final: { text: realtimeTranslationRef.current, lang: targetLang }
               });
@@ -114,7 +114,7 @@ function App() {
               });
             } else if (msg.type === "input_audio_buffer.speech_started") {
                // User interrupted or started speaking. Close previous interaction.
-               // Sela o texto se houver dados úteis no rascunho anterior
+               // Seal the text if there are useful data in the previous draft
                if (realtimeOriginalRef.current || realtimeTranslationRef.current) {
                  setHistory(prev => {
                    const block = {
@@ -128,7 +128,7 @@ function App() {
                realtimeOriginalRef.current = '';
                realtimeTranslationRef.current = '';
                setActiveRealtime({
-                 original: { text: "(Ouvindo...)", lang: sourceLang },
+                 original: { text: "(Listening...)", lang: sourceLang },
                  pivot: null,
                  final: { text: "", lang: targetLang }
                });
@@ -138,10 +138,10 @@ function App() {
                }
             } else if (msg.type === "error") {
             console.error("OpenAI Error:", msg.error);
-            setBackendError(msg.error?.message || "Erro OpenAI Realtime");
+            setBackendError(msg.error?.message || "OpenAI Realtime Error");
           }
         } catch(e) {
-          console.error("Erro ao processar mensagem ws:", e);
+          console.error("Error processing ws message:", e);
         }
       };
       
@@ -189,7 +189,7 @@ function App() {
         });
 
         if (!transcribeRes.ok) {
-          let errMessage = `Erro na transcrição: ${transcribeRes.status}`;
+          let errMessage = `Transcription error: ${transcribeRes.status}`;
           try {
             const errData = await transcribeRes.json();
             if (errData && errData.detail) errMessage = errData.detail;
@@ -231,7 +231,7 @@ function App() {
         });
 
         if (!translateRes.ok) {
-          throw new Error(`Erro na tradução: ${translateRes.status}`);
+          throw new Error(`Translation error: ${translateRes.status}`);
         }
 
         const translateData = await translateRes.json();
@@ -242,7 +242,7 @@ function App() {
 
       } catch (err) {
         console.error(err);
-        setBackendError(err.message || "Falha ao comunicar com o sistema local.");
+        setBackendError(err.message || "Failed to communicate with local system.");
         setTimeout(() => setBackendError(null), 6000);
       }
     }
@@ -266,7 +266,7 @@ function App() {
       });
 
       if (!translateRes.ok) {
-        throw new Error(`Erro na tradução: ${translateRes.status}`);
+        throw new Error(`Translation error: ${translateRes.status}`);
       }
 
       const translateData = await translateRes.json();
@@ -277,7 +277,7 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setBackendError(err.message || "Falha do sistema local.");
+      setBackendError(err.message || "Local system failure.");
       setTimeout(() => setBackendError(null), 6000);
     }
   };
@@ -326,7 +326,7 @@ function App() {
           <button 
             onClick={handleSwapLanguages} 
             className="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-90 flex items-center justify-center shadow-lg"
-            title="Permutar Línguas"
+            title="Swap Languages"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -437,7 +437,7 @@ function App() {
                   {isListening ? (
                     <>
                       <div className="w-4 h-4 rounded bg-red-400"></div>
-                      Parar Gravação
+                      Stop Recording
                     </>
                   ) : (
                     <>
@@ -445,7 +445,7 @@ function App() {
                         <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
                         <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.85V21a.75.75 0 01-1.5 0v-1.25a6.751 6.751 0 01-6-6.85v-1.5a.75.75 0 01.75-.75z" />
                       </svg>
-                      Iniciar Microfone
+                      Start Microphone
                     </>
                   )}
                 </button>
