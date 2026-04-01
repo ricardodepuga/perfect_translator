@@ -106,12 +106,6 @@ jobs:
           path: distribuicoes/
           merge-multiple: true
       
-      - name: Fix Filenames (Identify Architecture)
-        run: |
-          cd distribuicoes
-          for f in *.dmg; do mv "$f" "${f%.dmg}-mac-arm64.dmg" 2>/dev/null || true; done
-          # Just an extra step if we want to organize files. Actually they will just be uploaded.
-
       - name: Extract Commit Message for Release Notes
         id: release_notes
         run: |
