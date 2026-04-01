@@ -97,6 +97,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Download Results from GitHub
         uses: actions/download-artifact@v4
         with:
