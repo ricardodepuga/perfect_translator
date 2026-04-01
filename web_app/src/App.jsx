@@ -49,7 +49,7 @@ function App() {
         openai_model: openAIModel
       })
     }).catch(e => console.log("Backend might not be up yet: ", e));
-  }, [openAIKey, openAIModel]);
+  }, [openAIKey, openAIModel, autoPlayVoice, useRealtime]);
 
   // Audio Control
   const [isListening, setIsListening] = useState(false);
@@ -140,7 +140,9 @@ function App() {
             console.error("OpenAI Error:", msg.error);
             setBackendError(msg.error?.message || "Erro OpenAI Realtime");
           }
-        } catch(e) {}
+        } catch(e) {
+          console.error("Erro ao processar mensagem ws:", e);
+        }
       };
       
       ws.onerror = () => setBackendError("WebSocket connection failed");
@@ -153,7 +155,7 @@ function App() {
         wsRef.current = null;
       };
     }
-  }, [isListening, sourceLang, targetLang, useRealtime]);
+  }, [isListening, sourceLang, targetLang, useRealtime, autoPlayVoice, usePivot, speakText]);
 
   const handleAudioData = async (data) => {
     const isBlob = typeof data === 'object' && typeof data?.size === 'number';
@@ -190,13 +192,15 @@ function App() {
           try {
             const errData = await transcribeRes.json();
             if (errData && errData.detail) errMessage = errData.detail;
-          } catch (e) { }
+          } catch (e) {
+            console.error(e);
+          }
           throw new Error(errMessage);
         }
 
         const transcribeData = await transcribeRes.json();
         const text = transcribeData.text?.trim() || "";
-        const lowerText = text.toLowerCase().replace(/[.\-\?!,]/g, "");
+        const lowerText = text.toLowerCase().replace(/[.\-?!,]/g, "");
 
         const hallucinationKeywords = [
           "e aí", "e ai", "tchau", "obrigado", "unknown",

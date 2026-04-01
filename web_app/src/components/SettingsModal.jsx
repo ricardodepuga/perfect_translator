@@ -10,8 +10,6 @@ const SettingsModal = ({
     setVisibleLanguages,
     showOriginal,
     setShowOriginal,
-    showPivotText,
-    setShowPivotText,
     audioDeviceId,
     setAudioDeviceId,
     openAIKey, setOpenAIKey,

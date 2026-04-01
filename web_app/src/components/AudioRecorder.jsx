@@ -40,7 +40,7 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
           } else if (mediaRecorderRef.current.state !== 'inactive') {
              mediaRecorderRef.current.stop();
           }
-      } catch (e) { /* ignore */ }
+      } catch (_e) { /* ignore */ }
     }
     mediaRecorderRef.current = null;
     if (streamRef.current) {
@@ -249,6 +249,7 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
   // Start/stop based on isActive or mode shift
   useEffect(() => {
     if (isActive) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       startContinuousCapture();
     } else {
       stopStream();
@@ -259,8 +260,10 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
   // Restart when device or mode changes while active
   useEffect(() => {
     if (isActive && listening) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       startContinuousCapture();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeviceId, useRealtime, startContinuousCapture]);
 
   if (!isActive) return null;
