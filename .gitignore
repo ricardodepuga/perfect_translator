@@ -6,3 +6,9 @@ credentials.json
 token.json
 __pycache__/
 *.pyc
+
+# PyInstaller
+build/
+dist/
+*.spec
+*.webm

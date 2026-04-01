@@ -1,46 +1,23 @@
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-from langdetect import detect, LangDetectException
+
 
 load_dotenv()
 
 class TranslationService:
     def __init__(self):
-        self.provider = os.getenv("LLM_PROVIDER", "openai")
-        
-        if self.provider == "openai":
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            self.model = "gpt-4o"
-        elif self.provider == "ollama":
-            # Ollama compatibility with OpenAI client
-            self.client = OpenAI(
-                base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-                api_key="ollama" # Not used but required
-            )
-            self.model = os.getenv("OLLAMA_MODEL", "gemma3:4b")
+        self.provider = "openai"
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "not-provided"))
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o")
 
     async def translate(self, text: str, source_lang: str, target_lang: str, use_pivot: bool = True):
         """
         Translates text with a Pivot strategy (Source -> English -> Target).
         Returns all three steps.
-        Includes Auto-Detection and Auto-Inversion logic.
+        Includes Auto-Inversion logic.
         """
         print(f"TranslationService: Using provider '{self.provider}' model '{getattr(self, 'model', 'N/A')}'")
-
-        if self.provider == "mock":
-            return self._mock_response(text, source_lang, target_lang)
-
-        # 1. Auto-Detect Language if needed
-        if source_lang == "auto":
-            try:
-                detected = detect(text)
-                # Map common codes if necessary, but langdetect usually returns 'en', 'pt', 'ja'
-                print(f"Detected language: {detected}")
-                source_lang = detected
-            except LangDetectException:
-                print("Could not detect language, defaulting to 'pt'")
-                source_lang = "pt"
 
         # 2. Auto-Inversion Logic (Bidirectional)
         # If the source language turns out to be the same as the target, 
@@ -97,9 +74,4 @@ class TranslationService:
             print(f"LLM Call Error: {e}")
             return f"[Error: {str(e)}]"
 
-    def _mock_response(self, text: str, source: str, target: str):
-        return {
-             "original": {"text": text, "lang": source},
-             "pivot": {"text": f"[MOCK EN] {text}", "lang": "en"},
-             "final": {"text": f"[MOCK {target.upper()}] {text}", "lang": target}
-        }
+

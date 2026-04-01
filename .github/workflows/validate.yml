@@ -1,0 +1,56 @@
+name: Validate Build & Quality
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  validate-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web_app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: web_app/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci || npm install
+
+      - name: Linters / Code Quality
+        run: npm run lint
+
+      - name: Test Build (Dry Run)
+        run: npm run build
+
+  validate-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Backend Deps
+        run: |
+          cd execution
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r ../requirements.txt
+
+      - name: Typecheck / Syntax Check
+        run: |
+          # Ensures simple compilation validation
+          python -m py_compile execution/*.py
+          python -m py_compile execution/services/*.py
+          python -m py_compile tests/*.py

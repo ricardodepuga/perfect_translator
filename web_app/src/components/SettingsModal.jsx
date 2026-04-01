@@ -13,9 +13,12 @@ const SettingsModal = ({
     showPivotText,
     setShowPivotText,
     audioDeviceId,
-    setAudioDeviceId
+    setAudioDeviceId,
+    openAIKey, setOpenAIKey,
+    openAIModel, setOpenAIModel,
+    useRealtime, setUseRealtime,
+    autoPlayVoice, setAutoPlayVoice
 }) => {
-    if (!isOpen) return null;
 
     const toggleLanguage = (code) => {
         const newVisible = new Set(visibleLanguages);
@@ -52,6 +55,8 @@ const SettingsModal = ({
         fetchDevices();
     }, [isOpen]);
 
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
@@ -76,7 +81,52 @@ const SettingsModal = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 space-y-8">
+                <div className="p-6 space-y-8 flex-1 overflow-y-auto max-h-[80vh] custom-scrollbar">
+
+                    {/* Providers Settings */}
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">AI API & Processing</h3>
+                        
+                        <div className="space-y-4 bg-gray-700/30 p-4 rounded-lg border border-gray-700">
+                            <div>
+                                <label className="text-white font-medium block mb-1 text-sm">Modo de Processamento de Áudio</label>
+                                <select 
+                                    value={useRealtime ? "realtime" : "standard"} 
+                                    onChange={(e) => setUseRealtime(e.target.value === "realtime")} 
+                                    className="w-full bg-gray-800 rounded px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 border-none outline-none"
+                                >
+                                    <option value="standard">Modo Standard (Económico, Gravação por Pedaços)</option>
+                                    <option value="realtime">Modo Realtime (Maior Custo, Streaming Imediato)</option>
+                                </select>
+                                <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+                                    O <b>Modo Standard</b> consome ~0.009$/min e divide a fala por silêncio. 
+                                    O <b>Modo Realtime</b> garante transcrição instantânea mas consome ~0.06$/min (7x mais caro).
+                                </p>
+                            </div>
+                            <div className="space-y-3 pt-3 mt-3 border-t border-gray-600">
+                                <div>
+                                    <label className="text-white font-medium block mb-1 text-sm">OpenAI API Key</label>
+                                    <input 
+                                        type="password" 
+                                        value={openAIKey} 
+                                        onChange={(e) => setOpenAIKey(e.target.value)}
+                                        placeholder="sk-..." 
+                                        className="w-full bg-gray-800 rounded px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 border-none outline-none font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-white font-medium block mb-1 text-sm">OpenAI Model</label>
+                                    <input 
+                                        type="text" 
+                                        value={openAIModel} 
+                                        onChange={(e) => setOpenAIModel(e.target.value)}
+                                        placeholder="gpt-4o" 
+                                        className="w-full bg-gray-800 rounded px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 border-none outline-none font-mono"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Pivot Setting */}
                     <div className="space-y-3">
@@ -121,24 +171,24 @@ const SettingsModal = ({
                                 </button>
                             </div>
 
-                            {/* Show Pivot */}
-                            <div className={`flex items-center justify-between bg-gray-700/30 p-3 rounded-lg border border-gray-700 ${!usePivot ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            {/* Auto Play Voice */}
+                            <div className="flex items-center justify-between bg-gray-700/30 p-3 rounded-lg border border-gray-700">
                                 <div>
-                                    <span className="text-white font-medium block">Mostrar Pivot (Inglês)</span>
-                                    {!usePivot && <span className="text-xs text-yellow-500">Requer que o Pivot Language esteja ativo</span>}
+                                    <span className="text-white font-medium block">Leitura Automática de Voz</span>
+                                    <span className="text-xs text-gray-400">Ouve a tradução final em voz alta no browser.</span>
                                 </div>
                                 <button
-                                    onClick={() => usePivot && setShowPivotText(!showPivotText)}
-                                    disabled={!usePivot}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${showPivotText && usePivot ? 'bg-blue-600' : 'bg-gray-600'
+                                    onClick={() => setAutoPlayVoice(!autoPlayVoice)}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${autoPlayVoice ? 'bg-blue-600' : 'bg-gray-600'
                                         }`}
                                 >
                                     <span
-                                        className={`${showPivotText && usePivot ? 'translate-x-6' : 'translate-x-1'
+                                        className={`${autoPlayVoice ? 'translate-x-6' : 'translate-x-1'
                                             } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out`}
                                     />
                                 </button>
                             </div>
+
                         </div>
                     </div>
 
