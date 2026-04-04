@@ -3,9 +3,14 @@ import os
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from execution.services.audio_service import AudioService
-from execution.services.translation_service import TranslationService
-from execution.services.realtime_service import RealtimeService
+try:
+    from execution.services.audio_service import AudioService
+    from execution.services.translation_service import TranslationService
+    from execution.services.realtime_service import RealtimeService
+except ModuleNotFoundError:
+    from services.audio_service import AudioService
+    from services.translation_service import TranslationService
+    from services.realtime_service import RealtimeService
 from pydantic import BaseModel
 from typing import Optional
 import os
@@ -73,7 +78,7 @@ async def websocket_realtime(websocket: WebSocket, source_lang: str = "pt", targ
 @app.post("/transcribe")
 async def transcribe_audio(
     file: UploadFile = File(...),
-    language: Optional[str] = Form("pt")
+    language: Optional[str] = Form(None)
 ):
     temp_file_path = None # Initialize to None
     try:

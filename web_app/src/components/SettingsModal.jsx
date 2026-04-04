@@ -13,7 +13,6 @@ const SettingsModal = ({
     audioDeviceId,
     setAudioDeviceId,
     openAIKey, setOpenAIKey,
-    openAIModel, setOpenAIModel,
     useRealtime, setUseRealtime,
     autoPlayVoice, setAutoPlayVoice
 }) => {
@@ -101,7 +100,7 @@ const SettingsModal = ({
                                     <b>Real-time Mode</b> guarantees instant transcription but consumes ~$0.06/min (7x more expensive).
                                 </p>
                             </div>
-                            <div className="space-y-3 pt-3 mt-3 border-t border-gray-600">
+                            <div className="pt-3 mt-3 border-t border-gray-600">
                                 <div>
                                     <label className="text-white font-medium block mb-1 text-sm">OpenAI API Key</label>
                                     <input 
@@ -109,16 +108,6 @@ const SettingsModal = ({
                                         value={openAIKey} 
                                         onChange={(e) => setOpenAIKey(e.target.value)}
                                         placeholder="sk-..." 
-                                        className="w-full bg-gray-800 rounded px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 border-none outline-none font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-white font-medium block mb-1 text-sm">OpenAI Model</label>
-                                    <input 
-                                        type="text" 
-                                        value={openAIModel} 
-                                        onChange={(e) => setOpenAIModel(e.target.value)}
-                                        placeholder="gpt-4o" 
                                         className="w-full bg-gray-800 rounded px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 border-none outline-none font-mono"
                                     />
                                 </div>

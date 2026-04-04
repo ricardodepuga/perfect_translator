@@ -37,7 +37,11 @@
       }
     ],
     "mac": {
-      "target": ["dmg"]
+      "target": ["dmg"],
+      "identity": null,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "This app requires microphone access to enable real-time speech translation."
+      }
     },
     "win": {
       "target": ["nsis"]

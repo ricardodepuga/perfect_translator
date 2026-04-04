@@ -1,14 +1,23 @@
-
-# 3-Layer Architecture Ignored Files
-.tmp/
+# Environment & Credentials
 .env
 credentials.json
 token.json
+
+# Python
 __pycache__/
 *.pyc
+venv/
 
 # PyInstaller
-build/
-dist/
+/execution/build/
+/execution/dist/
+/build/
+/dist/
 *.spec
+
+# Temporary files
+.tmp/
 *.webm
+
+# OS
+.DS_Store

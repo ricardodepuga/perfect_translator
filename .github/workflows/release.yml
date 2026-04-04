@@ -48,25 +48,24 @@ jobs:
 
       - name: Build Python Backend (Native PyInstaller)
         run: |
-          cd execution
           python -m venv venv
           if [ "$RUNNER_OS" == "Windows" ]; then
             source venv/Scripts/activate
           else
             source venv/bin/activate
           fi
-          pip install -r ../requirements.txt
+          pip install -r requirements.txt
           pip install pyinstaller
-          pyinstaller --name api --onefile --hidden-import="websockets" --hidden-import="fastapi" --hidden-import="uvicorn" api.py
+          pyinstaller --name api --onefile --hidden-import="websockets" --hidden-import="fastapi" --hidden-import="uvicorn" execution/api.py
         shell: bash
 
       - name: Bundle API into Electron base system
         run: |
           mkdir -p web_app/bin
           if [ "$RUNNER_OS" == "Windows" ]; then
-            cp execution/dist/api.exe web_app/bin/api.exe
+            cp dist/api.exe web_app/bin/api.exe
           else
-            cp execution/dist/api web_app/bin/api
+            cp dist/api web_app/bin/api
             chmod +x web_app/bin/api
           fi
         shell: bash

@@ -50,10 +50,16 @@ const quitPythonSidecar = () => {
   }
 };
 
+const getIconPath = () => {
+  return path.join(__dirname, app.isPackaged ? '../dist/icon.png' : '../public/icon.png');
+};
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
+    title: 'Perfect Translator',
     width: 800,
     height: 600,
+    icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -72,6 +78,11 @@ const createWindow = () => {
 };
 
 app.whenReady().then(() => {
+  // Set macOS dock icon
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(getIconPath());
+  }
+
   // Start Python backend
   createPythonSidecar();
 

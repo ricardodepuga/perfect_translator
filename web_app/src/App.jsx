@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AudioRecorder from './components/AudioRecorder';
 import TranslationView from './components/TranslationView';
 import SettingsModal from './components/SettingsModal';
+import SplashScreen from './components/SplashScreen';
 import { LANGUAGES, DEFAULT_VISIBLE_LANGUAGES } from './constants/languages';
 
 function App() {
@@ -31,29 +32,63 @@ function App() {
   const [useRealtime, setUseRealtime] = useState(() => localStorage.getItem('useRealtime') === 'true');
 
   const [openAIKey, setOpenAIKey] = useState(() => localStorage.getItem('openAIKey') || '');
-  const [openAIModel, setOpenAIModel] = useState(() => localStorage.getItem('openAIModel') || 'gpt-4o');
+
+
+  // Splash screen — poll backend health
+  const [backendReady, setBackendReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const splashMinTime = Date.now() + 1200; // minimum 1.2s display
+    let cancelled = false;
+
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const res = await fetch('http://127.0.0.1:8000/', { signal: AbortSignal.timeout(2000) });
+          if (res.ok) {
+            // Wait for minimum splash display time
+            const remaining = splashMinTime - Date.now();
+            if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
+            if (!cancelled) {
+              setBackendReady(true);
+              // Give the fade-out transition time to complete
+              setTimeout(() => { if (!cancelled) setShowSplash(false); }, 700);
+            }
+            return;
+          }
+        } catch { /* backend not ready yet */ }
+        await new Promise(r => setTimeout(r, 800));
+      }
+    };
+
+    poll();
+    return () => { cancelled = true; };
+  }, []);
 
   // Sync to local storage and Backend Python
   useEffect(() => {
     localStorage.setItem('openAIKey', openAIKey);
-    localStorage.setItem('openAIModel', openAIModel);
     localStorage.setItem('useRealtime', useRealtime ? 'true' : 'false');
     localStorage.setItem('autoPlayVoice', autoPlayVoice ? 'true' : 'false');
 
-    // Sync via POST request to local Python sidecar
+    // Only sync config when backend is ready
+    if (!backendReady) return;
+
     fetch('http://127.0.0.1:8000/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        openai_api_key: openAIKey,
-        openai_model: openAIModel
+        openai_api_key: openAIKey
       })
     }).catch(e => console.log("Backend might not be up yet: ", e));
-  }, [openAIKey, openAIModel, autoPlayVoice, useRealtime]);
+  }, [openAIKey, autoPlayVoice, useRealtime, backendReady]);
 
   // Audio Control
   const [isListening, setIsListening] = useState(false);
   const [backendError, setBackendError] = useState(null);
+
+  const hasApiKey = openAIKey && openAIKey.trim().length > 0;
 
   const [sourceLang, setSourceLang] = useState('pt');
   const [targetLang, setTargetLang] = useState('ja');
@@ -67,13 +102,13 @@ function App() {
     setHistory(prev => [newItem, ...prev].slice(0, 3));
   };
 
-  const speakText = (text, lang) => {
+  const speakText = useCallback((text, lang) => {
     if (!('speechSynthesis' in window) || !autoPlayVoice || !text) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
     window.speechSynthesis.speak(utterance);
-  };
+  }, [autoPlayVoice]);
 
   // Start WebSocket when isListening changes (only if useRealtime is true)
   useEffect(() => {
@@ -155,8 +190,7 @@ function App() {
         wsRef.current = null;
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isListening, sourceLang, targetLang, useRealtime, autoPlayVoice, usePivot, speakText]);
+  }, [isListening, sourceLang, targetLang, useRealtime, usePivot, speakText]);
 
   const handleAudioData = async (data) => {
     const isBlob = typeof data === 'object' && typeof data?.size === 'number';
@@ -178,7 +212,6 @@ function App() {
       // Data is a Blob (WebM file)
       const formData = new FormData();
       formData.append('file', data, 'audio.webm');
-      formData.append('language', sourceLang);
 
       try {
         setBackendError(null);
@@ -203,6 +236,26 @@ function App() {
         const text = transcribeData.text?.trim() || "";
         const lowerText = text.toLowerCase().replace(/[.\-?!,]/g, "");
 
+        // Mapping list of ISO 639-1 selected codes to Whisper's output language strings
+        const languageNameMap = {
+          "pt": "portuguese",
+          "en": "english",
+          "es": "spanish",
+          "fr": "french",
+          "de": "german",
+          "it": "italian",
+          "ja": "japanese",
+          "zh": "chinese"
+        };
+        const expectedLangName = languageNameMap[sourceLang] || sourceLang;
+
+        // Language mismatch filter: if Whisper detects a different language
+        const detectedLang = transcribeData.language?.toLowerCase() || "";
+        if (detectedLang && detectedLang !== expectedLangName && detectedLang !== sourceLang) {
+          console.log(`Language mismatch: expected '${expectedLangName}' (code: ${sourceLang}), Whisper detected '${detectedLang}'. Discarding: "${text}"`);
+          return;
+        }
+
         const hallucinationKeywords = [
           "e aí", "e ai", "tchau", "obrigado", "unknown",
           "silêncio", "amém", "amem", "deixe seu like", "inscreva", "canal",
@@ -218,13 +271,13 @@ function App() {
           return;
         }
 
-        // 2. Translate
+        // 2. Translate — always use the user-selected sourceLang, not Whisper's detection
         const translateRes = await fetch('http://127.0.0.1:8000/translate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: transcribeData.text,
-            source_lang: transcribeData.language || sourceLang,
+            source_lang: sourceLang,
             target_lang: targetLang,
             use_pivot: usePivot
           })
@@ -304,7 +357,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans p-6 overflow-hidden">
+    <>
+      {showSplash && <SplashScreen isVisible={!backendReady} />}
+      <div className={`min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center font-sans p-6 overflow-hidden transition-opacity duration-500 ${backendReady ? 'opacity-100' : 'opacity-0'}`}>
 
       {/* Header / Controls */}
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm z-10">
@@ -378,7 +433,6 @@ function App() {
         audioDeviceId={audioDeviceId}
         setAudioDeviceId={setAudioDeviceId}
         openAIKey={openAIKey} setOpenAIKey={setOpenAIKey}
-        openAIModel={openAIModel} setOpenAIModel={setOpenAIModel}
         useRealtime={useRealtime} setUseRealtime={setUseRealtime}
         autoPlayVoice={autoPlayVoice} setAutoPlayVoice={setAutoPlayVoice}
       />
@@ -429,9 +483,12 @@ function App() {
               <div className="flex flex-col items-center justify-center gap-4">
                 <button
                   onClick={handleToggleListening}
+                  disabled={!hasApiKey && !isListening}
                   className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all shadow-lg ${isListening
                     ? 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 shadow-red-500/20'
-                    : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20'
+                    : !hasApiKey
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                      : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20'
                     }`}
                 >
                   {isListening ? (
@@ -449,6 +506,13 @@ function App() {
                     </>
                   )}
                 </button>
+                {!hasApiKey && (
+                  <div className="mt-2 p-3 bg-amber-900/30 border border-amber-500/40 rounded-lg text-amber-200 text-sm text-center">
+                    ⚠️ OpenAI API Key not configured.{' '}
+                    <button onClick={() => setShowSettings(true)} className="underline text-amber-300 hover:text-amber-100 font-medium">Open Settings</button>{' '}
+                    to add your key.
+                  </div>
+                )}
                 {backendError && (
                   <div className="mt-4 p-3 bg-red-900/40 border border-red-500/50 rounded-lg text-red-200 text-sm text-center">
                     ⚠️ {backendError}
@@ -467,21 +531,29 @@ function App() {
                   placeholder="Type here..."
                   className="flex-grow bg-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button type="submit" className="bg-blue-600 px-6 rounded-lg font-bold hover:bg-blue-500">
+                <button type="submit" disabled={!hasApiKey} className={`px-6 rounded-lg font-bold transition-all ${hasApiKey ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'}`}>
                   Translate
                 </button>
               </form>
             )}
-            {mode !== 'audio' && (
+            {mode !== 'audio' && hasApiKey && (
               <p className="text-center text-gray-500 text-xs mt-4">
                 Press Enter to translate
               </p>
+            )}
+            {mode !== 'audio' && !hasApiKey && (
+              <div className="mt-3 p-3 bg-amber-900/30 border border-amber-500/40 rounded-lg text-amber-200 text-sm text-center">
+                ⚠️ OpenAI API Key not configured.{' '}
+                <button onClick={() => setShowSettings(true)} className="underline text-amber-300 hover:text-amber-100 font-medium">Open Settings</button>{' '}
+                to add your key.
+              </div>
             )}
           </div>
         </div>
       )}
 
     </div>
+    </>
   );
 }
 
