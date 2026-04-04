@@ -14,8 +14,35 @@ const SettingsModal = ({
     setAudioDeviceId,
     openAIKey, setOpenAIKey,
     useRealtime, setUseRealtime,
-    autoPlayVoice, setAutoPlayVoice
+    autoPlayVoice, setAutoPlayVoice,
+    customLogo, setCustomLogo
 }) => {
+
+    const logoInputRef = React.useRef(null);
+
+    const handleLogoUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Limit to 2MB
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Logo must be under 2MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            setCustomLogo(ev.target.result);
+        };
+        reader.readAsDataURL(file);
+        // Reset input so re-uploading same file triggers change
+        e.target.value = '';
+    };
+
+    const handleRemoveLogo = () => {
+        setCustomLogo('');
+        if (logoInputRef.current) logoInputRef.current.value = '';
+    };
 
     const toggleLanguage = (code) => {
         const newVisible = new Set(visibleLanguages);
@@ -80,7 +107,7 @@ const SettingsModal = ({
                 {/* Content */}
                 <div className="p-6 space-y-8 flex-1 overflow-y-auto max-h-[80vh] custom-scrollbar">
 
-                    {/* Providers Settings */}
+
                     <div className="space-y-3">
                         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">AI API & Processing</h3>
                         
@@ -125,8 +152,8 @@ const SettingsModal = ({
                             </div>
                             <button
                                 onClick={() => setUsePivot(!usePivot)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${usePivot ? 'bg-blue-600' : 'bg-gray-600'
-                                    }`}
+                                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900"
+                                style={{ backgroundColor: usePivot ? 'var(--accent)' : '#4b5563', '--tw-ring-color': 'var(--accent)' }}
                             >
                                 <span
                                     className={`${usePivot ? 'translate-x-6' : 'translate-x-1'
@@ -148,8 +175,8 @@ const SettingsModal = ({
                                 </div>
                                 <button
                                     onClick={() => setShowOriginal(!showOriginal)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${showOriginal ? 'bg-blue-600' : 'bg-gray-600'
-                                        }`}
+                                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900"
+                                    style={{ backgroundColor: showOriginal ? 'var(--accent)' : '#4b5563', '--tw-ring-color': 'var(--accent)' }}
                                 >
                                     <span
                                         className={`${showOriginal ? 'translate-x-6' : 'translate-x-1'
@@ -166,8 +193,8 @@ const SettingsModal = ({
                                 </div>
                                 <button
                                     onClick={() => setAutoPlayVoice(!autoPlayVoice)}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${autoPlayVoice ? 'bg-blue-600' : 'bg-gray-600'
-                                        }`}
+                                    className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900"
+                                    style={{ backgroundColor: autoPlayVoice ? 'var(--accent)' : '#4b5563', '--tw-ring-color': 'var(--accent)' }}
                                 >
                                     <span
                                         className={`${autoPlayVoice ? 'translate-x-6' : 'translate-x-1'
@@ -203,6 +230,56 @@ const SettingsModal = ({
                         </div>
                     </div>
 
+
+                    {/* Branding / Logo Upload */}
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Branding</h3>
+                        <div className="bg-gray-700/30 p-4 rounded-lg border border-gray-700">
+                            <label className="text-white font-medium block mb-2 text-sm">Custom Logo</label>
+                            <p className="text-xs text-gray-400 mb-3 leading-relaxed">
+                                Upload a logo to replace the app title. The colour scheme will adapt to match your brand.
+                            </p>
+                            
+                            {customLogo ? (
+                                <div className="flex items-center gap-4">
+                                    <div className="h-12 w-auto flex items-center bg-gray-800 rounded-lg px-4 py-2">
+                                        <img src={customLogo} alt="Logo" className="h-8 max-w-[160px] object-contain" />
+                                    </div>
+                                    <button
+                                        onClick={() => logoInputRef.current?.click()}
+                                        className="text-xs text-gray-300 bg-gray-600 hover:bg-gray-500 px-3 py-1.5 rounded transition-colors"
+                                    >
+                                        Change
+                                    </button>
+                                    <button
+                                        onClick={handleRemoveLogo}
+                                        className="text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 px-3 py-1.5 rounded transition-colors"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => logoInputRef.current?.click()}
+                                    className="w-full border-2 border-dashed border-gray-600 hover:border-gray-400 rounded-lg py-4 flex flex-col items-center gap-2 transition-colors group cursor-pointer"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 group-hover:text-gray-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">Click to upload logo (PNG, SVG, JPG)</span>
+                                </button>
+                            )}
+
+                            <input
+                                ref={logoInputRef}
+                                type="file"
+                                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                            />
+                        </div>
+                    </div>
+
                     {/* Languages Setting */}
                     <div className="space-y-3">
                         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Visible Languages</h3>
@@ -211,15 +288,17 @@ const SettingsModal = ({
                                 <label
                                     key={lang.code}
                                     className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${visibleLanguages.includes(lang.code)
-                                        ? 'bg-blue-900/20 border-blue-500/50'
+                                        ? 'border-opacity-50 bg-opacity-20'
                                         : 'bg-gray-700/20 border-gray-700 hover:border-gray-600'
                                         }`}
+                                    style={visibleLanguages.includes(lang.code) ? { backgroundColor: 'color-mix(in srgb, var(--accent) 15%, transparent)', borderColor: 'color-mix(in srgb, var(--accent) 50%, transparent)' } : {}}
                                 >
                                     <input
                                         type="checkbox"
                                         checked={visibleLanguages.includes(lang.code)}
                                         onChange={() => toggleLanguage(lang.code)}
-                                        className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-600 ring-offset-gray-800 focus:ring-2"
+                                        className="w-4 h-4 bg-gray-700 border-gray-600 rounded focus:ring-2"
+                                        style={{ accentColor: 'var(--accent)' }}
                                     />
                                     <span className="ml-3 text-sm text-gray-200 font-medium flex-grow">{lang.name}</span>
                                     <span className="text-lg">{lang.flag}</span>
@@ -234,7 +313,10 @@ const SettingsModal = ({
                 <div className="p-6 pt-0">
                     <button
                         onClick={onClose}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors shadow-lg shadow-blue-900/20"
+                        className="w-full text-white font-bold py-3 rounded-lg transition-colors shadow-lg"
+                        style={{ backgroundColor: 'var(--accent)', boxShadow: '0 10px 15px -3px var(--accent-glow)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-hover)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent)'}
                     >
                         Done
                     </button>

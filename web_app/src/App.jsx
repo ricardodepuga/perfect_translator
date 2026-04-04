@@ -4,6 +4,7 @@ import TranslationView from './components/TranslationView';
 import SettingsModal from './components/SettingsModal';
 import SplashScreen from './components/SplashScreen';
 import { LANGUAGES, DEFAULT_VISIBLE_LANGUAGES } from './constants/languages';
+import { extractColorsFromImage, applyThemeColors, resetThemeColors } from './utils/colorExtractor';
 
 function App() {
   const [history, setHistory] = useState([
@@ -32,6 +33,20 @@ function App() {
   const [useRealtime, setUseRealtime] = useState(() => localStorage.getItem('useRealtime') === 'true');
 
   const [openAIKey, setOpenAIKey] = useState(() => localStorage.getItem('openAIKey') || '');
+  const [customLogo, setCustomLogo] = useState(() => localStorage.getItem('customLogo') || '');
+
+  // Apply theme colours whenever logo changes
+  useEffect(() => {
+    if (customLogo) {
+      localStorage.setItem('customLogo', customLogo);
+      extractColorsFromImage(customLogo).then((colors) => {
+        if (colors) applyThemeColors(colors);
+      });
+    } else {
+      localStorage.removeItem('customLogo');
+      resetThemeColors();
+    }
+  }, [customLogo]);
 
 
   // Splash screen — poll backend health
@@ -363,13 +378,23 @@ function App() {
 
       {/* Header / Controls */}
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm z-10">
-        <h1 className="text-xl font-bold tracking-tighter">PERFECT TRANSLATOR</h1>
+        {customLogo ? (
+          <img 
+            src={customLogo} 
+            alt="Logo" 
+            className="h-12 max-w-[220px] object-contain transition-all duration-500" 
+            style={{ filter: 'drop-shadow(0 0 8px var(--accent-glow))' }}
+          />
+        ) : (
+          <h1 className="text-xl font-bold tracking-tighter bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">PERFECT TRANSLATOR</h1>
+        )}
 
         <div className="flex gap-4 items-center">
           <select
             value={sourceLang}
             onChange={(e) => setSourceLang(e.target.value)}
-            className="bg-gray-800 border-none rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-800 border-none rounded px-3 py-1 text-sm focus:outline-none focus:ring-2"
+            style={{ '--tw-ring-color': 'var(--accent)' }}
           >
             {LANGUAGES.filter(l => visibleLanguages.includes(l.code)).map(lang => (
               <option key={lang.code} value={lang.code}>
@@ -380,7 +405,8 @@ function App() {
 
           <button 
             onClick={handleSwapLanguages} 
-            className="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-90 flex items-center justify-center shadow-lg"
+            className="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-full transition-all focus:outline-none focus:ring-2 active:scale-90 flex items-center justify-center shadow-lg"
+            style={{ '--tw-ring-color': 'var(--accent)' }}
             title="Swap Languages"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -391,7 +417,8 @@ function App() {
           <select
             value={targetLang}
             onChange={(e) => setTargetLang(e.target.value)}
-            className="bg-gray-800 border-none rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-800 border-none rounded px-3 py-1 text-sm focus:outline-none focus:ring-2"
+            style={{ '--tw-ring-color': 'var(--accent)' }}
           >
             {LANGUAGES.filter(l => visibleLanguages.includes(l.code)).map(lang => (
               <option key={lang.code} value={lang.code}>
@@ -402,7 +429,8 @@ function App() {
 
           <button
             onClick={() => setMode(mode === 'audio' ? 'text' : 'audio')}
-            className="text-xs uppercase tracking-wide bg-gray-700 px-3 h-8 rounded hover:bg-gray-600 flex items-center"
+            className="text-xs uppercase font-bold tracking-wider px-4 h-9 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center shadow-md"
+            style={{ backgroundColor: 'var(--accent)', color: 'white', boxShadow: '0 4px 12px var(--accent-glow)' }}
           >
             {mode === 'audio' ? 'Text Mode' : 'Voice Mode'}
           </button>
@@ -435,6 +463,7 @@ function App() {
         openAIKey={openAIKey} setOpenAIKey={setOpenAIKey}
         useRealtime={useRealtime} setUseRealtime={setUseRealtime}
         autoPlayVoice={autoPlayVoice} setAutoPlayVoice={setAutoPlayVoice}
+        customLogo={customLogo} setCustomLogo={setCustomLogo}
       />
 
       {/* Main Content: History List */}
@@ -484,12 +513,17 @@ function App() {
                 <button
                   onClick={handleToggleListening}
                   disabled={!hasApiKey && !isListening}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all shadow-lg ${isListening
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 shadow-red-500/20'
+                  className={`flex items-center gap-2 px-8 py-4 rounded-full font-bold transition-all shadow-xl hover:scale-105 active:scale-95 ${isListening
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 shadow-red-500/20 active-pulse'
                     : !hasApiKey
                       ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
-                      : 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-600/20'
+                      : 'text-white'
                     }`}
+                  style={!isListening && hasApiKey ? { 
+                    backgroundColor: 'var(--accent)', 
+                    boxShadow: '0 8px 24px var(--accent-glow)',
+                    animation: 'soft-pulse 3s infinite'
+                  } : {}}
                 >
                   {isListening ? (
                     <>
@@ -529,9 +563,15 @@ function App() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Type here..."
-                  className="flex-grow bg-gray-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-grow bg-gray-800/80 backdrop-blur-md border border-gray-700 border-opacity-30 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 transition-all shadow-inner"
+                  style={{ '--tw-ring-color': 'var(--accent)' }}
                 />
-                <button type="submit" disabled={!hasApiKey} className={`px-6 rounded-lg font-bold transition-all ${hasApiKey ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'}`}>
+                <button 
+                  type="submit" 
+                  disabled={!hasApiKey} 
+                  className={`px-8 rounded-xl font-bold transition-all shadow-lg hover:scale-105 active:scale-95 disabled:scale-100 ${hasApiKey ? 'text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'}`}
+                  style={hasApiKey ? { backgroundColor: 'var(--accent)', boxShadow: '0 6px 16px var(--accent-glow)' } : {}}
+                >
                   Translate
                 </button>
               </form>
