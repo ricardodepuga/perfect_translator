@@ -260,7 +260,6 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
   // Restart when device or mode changes while active
   useEffect(() => {
     if (isActive && listening) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       startContinuousCapture();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -231,7 +231,7 @@ function App() {
         wsRef.current = null;
       };
     }
-  }, [isListening, sourceLang, targetLang, useRealtime, usePivot, speakText]);
+  }, [isListening, sourceLang, targetLang, useRealtime, usePivot, speakText, autoPlayVoice]);
 
   const handleAudioData = async (data) => {
     const isBlob = typeof data === 'object' && typeof data?.size === 'number';
@@ -275,7 +275,6 @@ function App() {
 
         const transcribeData = await transcribeRes.json();
         const text = transcribeData.text?.trim() || "";
-        const lowerText = text.toLowerCase().replace(/[.\-?!,]/g, "");
 
         // Mapping list of ISO 639-1 selected codes to Whisper's output language strings
         const languageNameMap = {

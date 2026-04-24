@@ -74,6 +74,7 @@ jobs:
         working-directory: web_app
         run: |
           npm ci || npm install
+          npm run lint
           npm run build
 
       - name: Finalize Electron-Builder packaging
