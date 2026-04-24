@@ -1,27 +1,38 @@
-# Arquitectura de 3 Camadas (Directives, Orchestration, Execution)
+# 3-Tier Architecture (Directives, Orchestration, Execution)
 
-Esta estrutura foi configurada para criar uma separação clara entre a intenção (o que fazer) e a execução (como fazer), maximizando a fiabilidade e manutenção do código.
+This structure was configured to create a clear separation between intention (what to do) and execution (how to do it), maximizing reliability and code maintainability.
 
-## Estrutura de Pastas
+## Folder Structure
 
-*   **`directives/`** (Directivas): Contém os SOPs (Standard Operating Procedures) e instruções em Markdown. Define o "O Quê".
-    *   Exemplo: `directives/scrape_website.md`
-*   **`execution/`** (Execução): Contém os scripts Python determinísticos que realizam o trabalho pesado. Define o "Como".
-    *   Exemplo: `execution/scrape_single_site.py`
-*   **`.tmp/`** (Temporários): Directoria para ficheiros intermédios e temporários. O conteúdo desta pasta é ignorado pelo git e pode ser regenerado a qualquer momento.
+*   **`directives/`**: Contains the SOPs (Standard Operating Procedures) and instructions in Markdown. Defines the "What".
+    *   Example: `directives/scrape_website.md`
+*   **`execution/`**: Contains the deterministic Python scripts that do the heavy lifting. Defines the "How".
+    *   Example: `execution/scrape_single_site.py`
+*   **`.tmp/`**: Directory for intermediate and temporary files. The contents of this folder are ignored by git and can be regenerated at any time.
 
-## Fluxo de Trabalho
+## Workflow
 
-1.  **Directiva**: O Agente (ou utilizador) lê uma directiva em `directives/` para entender o objectivo e os passos necessários.
-2.  **Orquestração**: O Agente decide quais ferramentas usar e em que ordem, baseando-se na directiva.
-3.  **Execução**: O Agente executa scripts em `execution/` para realizar tarefas específicas de forma determinística e fiável.
+1.  **Directive**: The Agent (or user) reads a directive in `directives/` to understand the goal and necessary steps.
+2.  **Orchestration**: The Agent decides which tools to use and in what order, based on the directive.
+3.  **Execution**: The Agent runs scripts in `execution/` to perform specific tasks deterministically and reliably.
 
-## Princípios
+## Principles
 
-*   **Separação de Preocupações**: As directivas são flexíveis e humanas; a execução é rígida e fiável.
-*   **Auto-correcção (Self-annealing)**: Se um script falhar, o erro é analisado, o script é corrigido e a directiva actualizada com a nova informação.
-*   **Estado na Cloud**: Ficheiros finais devem ser entregues em serviços acessíveis (Google Drive, etc.), mantendo o sistema local apenas para processamento.
+*   **Separation of Concerns**: Directives are flexible and human-readable; execution is rigid and reliable.
+*   **Self-annealing**: If a script fails, the error is analyzed, the script is corrected, and the directive is updated with the new information.
+*   **Cloud State**: Final files must be delivered to accessible services (Google Drive, etc.), keeping the local system only for processing.
 
-## Configuração
+## Configuration
 
-O ficheiro `.gitignore` já está configurado para ignorar `.tmp/`, `.env` e credenciais sensíveis.
+The `.gitignore` file is already configured to ignore `.tmp/`, `.env` and sensitive credentials.
+
+## macOS Installation (Unsigned App)
+
+Since the application is distributed without an official Apple Developer signature, macOS (Gatekeeper) will quarantine it and display an error message stating that the application "is damaged and can't be opened. You should move it to the Bin".
+
+To resolve this, after dragging the application to your **Applications** folder, open the **Terminal** and run the following command:
+
+```bash
+sudo xattr -cr "/Applications/Perfect Translator.app"
+```
+*(You will be prompted for your Mac password)*. After running this command, the application will open normally!

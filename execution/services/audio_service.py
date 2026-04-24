@@ -29,8 +29,10 @@ class AudioService:
                 audio.export(wav_path, format="wav")
 
                 with open(wav_path, "rb") as audio_file:
-                    # Pass the specific language if provided
-                    kwargs = {"model": "whisper-1", "file": audio_file}
+                    kwargs = {
+                        "model": "whisper-1", 
+                        "file": audio_file
+                    }
                     if language:
                          kwargs["language"] = language
 

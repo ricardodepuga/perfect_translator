@@ -15,9 +15,10 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
   const isSpeakingRef = useRef(false);
   const speechStartTimeRef = useRef(null);
   const intervalRef = useRef(null);
+  const noiseFloorRef = useRef(0.015); // Starting baseline
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const [micLevel, setMicLevel] = useState(0); // State for the visual meter
+  const [micLevel, setMicLevel] = useState(0); 
   const onAudioDataRef = useRef(onAudioData);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
     setSpeaking(false);
     setListening(false);
     setMicLevel(0);
+    noiseFloorRef.current = 0.015; // Reset noise floor
   }, []);
 
   const startContinuousCapture = useCallback(async () => {
@@ -93,26 +95,21 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
         let lastTTSEndTime = 0;
 
         processor.onaudioprocess = (e) => {
-          // Anti-Echo Loop: Do not stream audio back to OpenAI if the browser is currently reading TTS translations
           if (window.speechSynthesis && window.speechSynthesis.speaking) {
             lastTTSEndTime = Date.now();
             return;
           }
-          // Give 500ms for physical room echo to dissipate
           if (Date.now() - lastTTSEndTime < 500) {
             return;
           }
 
           const inputData = e.inputBuffer.getChannelData(0);
-          
-          // Convert Float32Array to Int16Array
           const int16Buffer = new Int16Array(inputData.length);
           for (let i = 0; i < inputData.length; i++) {
             let s = Math.max(-1, Math.min(1, inputData[i]));
             int16Buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
           }
 
-          // Safe convert Int16Array to Base64 to avoid Call Stack Size limits
           const uint8Buffer = new Uint8Array(int16Buffer.buffer);
           let binary = '';
           for (let i = 0; i < uint8Buffer.byteLength; i++) {
@@ -125,9 +122,8 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
           }
         };
         
-        mediaRecorderRef.current = processor; // Store processor reference for cleanup
+        mediaRecorderRef.current = processor; 
       } else {
-        // Standard mode: Use MediaRecorder with chunks
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         audioContextRef.current = audioContext;
         const source = audioContext.createMediaStreamSource(stream);
@@ -162,7 +158,7 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
               if (chunksRef.current.length > 0 && duration >= MIN_SPEECH_DURATION_MS) {
                 const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
                 if (onAudioDataRef.current) {
-                  onAudioDataRef.current(blob); // Passes Blob to handleAudioData
+                  onAudioDataRef.current(blob); 
                 }
               }
 
@@ -186,7 +182,6 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
 
       setListening(true);
 
-      // Volume monitoring using setInterval (more reliable than rAF for background tabs)
       const dataArray = new Float32Array(analyserRef.current.fftSize);
 
       intervalRef.current = setInterval(() => {
@@ -194,25 +189,33 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
 
         analyserRef.current.getFloatTimeDomainData(dataArray);
 
-        // Calculate RMS
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) {
           sum += dataArray[i] * dataArray[i];
         }
         const rms = Math.sqrt(sum / dataArray.length);
         
-        // Update visual meter state
+        // Adaptive noise floor logic:
+        // Adjust the background noise profile slowly when we are NOT currently in the middle of speaking
+        if (!isSpeakingRef.current) {
+          // Weighted moving average to gently follow ambient noise
+          noiseFloorRef.current = (noiseFloorRef.current * 0.95) + (rms * 0.05);
+          // Never drop below an absolute floor to prevent pin-drop triggering
+          noiseFloorRef.current = Math.max(0.005, noiseFloorRef.current);
+        }
+
+        // Dynamic threshold is 2.5x the ambient noise, but never less than 0.015
+        const dynamicSilenceThreshold = Math.max(0.015, noiseFloorRef.current * 2.5);
+
         const normalizedLevel = Math.min(100, Math.max(0, (rms * 1000))); 
         setMicLevel(normalizedLevel);
 
-        if (rms > SILENCE_THRESHOLD) {
-          // Speech detected
+        if (rms > dynamicSilenceThreshold) {
           if (!isSpeakingRef.current) {
             isSpeakingRef.current = true;
             speechStartTimeRef.current = Date.now();
             setSpeaking(true);
           } else if (!useRealtime && speechStartTimeRef.current && (Date.now() - speechStartTimeRef.current >= MAX_SPEECH_DURATION_MS)) {
-            // Only force stop in Standard Mode (MediaRecorder) to slice big segments. UseRealtime streams constantly.
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                mediaRecorderRef.current.stop();
             }
@@ -224,21 +227,19 @@ const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime })
             silenceTimerRef.current = null;
           }
         } else if (isSpeakingRef.current && !silenceTimerRef.current) {
-          // Silence after speech
           silenceTimerRef.current = setTimeout(() => {
             silenceTimerRef.current = null;
             isSpeakingRef.current = false;
             setSpeaking(false);
             
             if (!useRealtime) {
-              // Standard Mode: Stop MediaRecorder to dispatch Blob
               if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                 mediaRecorderRef.current.stop();
               }
             }
           }, SILENCE_DURATION_MS);
         }
-      }, 80); // check every 80ms
+      }, 80); 
 
     } catch (err) {
       console.error('Error starting continuous capture:', err);

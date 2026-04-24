@@ -6,6 +6,26 @@ import SplashScreen from './components/SplashScreen';
 import { LANGUAGES, DEFAULT_VISIBLE_LANGUAGES } from './constants/languages';
 import { extractColorsFromImage, applyThemeColors, resetThemeColors } from './utils/colorExtractor';
 
+const isHallucinatedText = (text) => {
+  if (!text) return true;
+  const lower = text.toLowerCase().trim().replace(/[.\-?!,]/g, "");
+  const exactMatches = [
+     "tężcy", "теща", "allah'a emanet olun", "you",
+     "teste", "test", "testing", "e aí", "e ai", "tchau", "obrigado", 
+     "unknown", "silêncio", "amém", "amem", "ótimo", "otimo",
+     "jai mloknath", "dişlerim döküldü"
+  ];
+  if (exactMatches.includes(lower)) return true;
+  
+  const badPhrases = [
+     "deixe seu like", "inscreva no canal", "subscreva", "ative o sininho", 
+     "legendas"
+  ];
+  if (badPhrases.some(phrase => lower.includes(phrase))) return true;
+  
+  return false;
+};
+
 function App() {
   const [history, setHistory] = useState([
     {
@@ -155,7 +175,13 @@ function App() {
                 final: { text: realtimeTranslationRef.current, lang: targetLang }
               });
             } else if (msg.type === "conversation.item.input_audio_transcription.completed") {
-              const finalTranscript = msg.transcript || realtimeOriginalRef.current;
+              let finalTranscript = msg.transcript || realtimeOriginalRef.current;
+              if (isHallucinatedText(finalTranscript)) {
+                console.log(`Realtime: Discarding hallucination artifact: "${finalTranscript}"`);
+                // Clear the hallucinated text
+                finalTranscript = "";
+                realtimeTranslationRef.current = "";
+              }
               realtimeOriginalRef.current = finalTranscript;
               setActiveRealtime({
                 original: { text: finalTranscript, lang: sourceLang },
@@ -271,18 +297,8 @@ function App() {
           return;
         }
 
-        const hallucinationKeywords = [
-          "e aí", "e ai", "tchau", "obrigado", "unknown",
-          "silêncio", "amém", "amem", "deixe seu like", "inscreva", "canal",
-          "subscreva", "vídeo", "legendas", "próxima", "ative o sininho", "ótimo", "otimo"
-        ];
-
-        const words = lowerText.split(" ").filter(w => w.trim().length > 0);
-        const isHallucination = words.length > 0 && words.every(word =>
-          hallucinationKeywords.some(hk => hk.includes(word) || word.includes(hk))
-        );
-
-        if (!text || isHallucination || text === "(UNKNOWN)") {
+        if (isHallucinatedText(text)) {
+          console.log(`Discarding hallucination artifact: "${text}"`);
           return;
         }
 
@@ -483,14 +499,21 @@ function App() {
         )}
 
         {/* Stable History List */}
-        {history.map((item, index) => (
+        {history.map((item, index) => {
+          let visibilityClass = 'opacity-30 scale-90 blur-[1px] grayscale-[0.7] z-0';
+          
+          if (index === 0 && !activeRealtime) {
+            visibilityClass = 'opacity-100 scale-100 blur-none grayscale-0 z-10';
+          } else if ((index === 0 && activeRealtime) || index === 1) {
+            visibilityClass = 'opacity-60 scale-95 blur-[0.5px] grayscale-[0.3] z-0';
+          } else if ((index === 1 && activeRealtime) || index === 2) {
+            visibilityClass = 'opacity-40 scale-90 blur-[1px] grayscale-[0.5] z-0';
+          }
+
+          return (
           <div
             key={index}
-            className={`transition-all duration-700 w-full flex justify-center border-b border-gray-800 pb-4
-                ${index === 0 && !activeRealtime ? 'opacity-100 scale-100 z-10' : ''}
-                ${(index === 0 && activeRealtime) || index === 1 ? 'opacity-60 scale-95 blur-[0.5px] grayscale-[0.3] z-0' : ''}
-                ${(index === 1 && activeRealtime) || index === 2 ? 'opacity-30 scale-90 blur-[1px] grayscale-[0.7] z-0' : 'opacity-30 scale-90 blur-[1px] grayscale-[0.7] z-0'}
-              `}
+            className={`transition-all duration-700 w-full flex justify-center border-b border-gray-800 pb-4 ${visibilityClass}`}
           >
             <TranslationView
               key={`${index}-${showOriginal}-${showPivotText}`}
@@ -501,7 +524,8 @@ function App() {
               showPivotText={showPivotText && usePivot}
             />
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Input Area — only shown when showOriginal is enabled */}
