@@ -28,8 +28,8 @@ const createPythonSidecar = () => {
     // Production mode: run bundled pyinstaller binary
     // We'll configure electron-builder to copy it to resourcesPath
     const bundledApiDir = path.join(process.resourcesPath, 'bin');
-    // Let's assume we name the output binary simply 'api' when packaging
-    const binaryPath = path.join(bundledApiDir, 'api');
+    const binaryName = process.platform === 'win32' ? 'api.exe' : 'api';
+    const binaryPath = path.join(bundledApiDir, binaryName);
     console.log(`[Electron] Starting bundled python sidecar: ${binaryPath}`);
     pythonProcess = spawn(binaryPath, [], { stdio: 'inherit' });
   }

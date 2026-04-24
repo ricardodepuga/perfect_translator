@@ -22,13 +22,18 @@ class AudioService:
             from pydub import AudioSegment
             import os
 
-            # Always normalize strictly to WAV since Chromium MediaRecorder WEBM chunks often lack strict duration headers that OpenAI SDK FFmpeg rejects
+            # Attempt to normalize to WAV (Requires FFmpeg)
             wav_path = file_path + ".wav"
             try:
                 audio = AudioSegment.from_file(file_path)
                 audio.export(wav_path, format="wav")
+                target_file_path = wav_path
+            except Exception as e:
+                print(f"FFmpeg/Pydub conversion failed (probably missing FFmpeg on Windows). Falling back to raw webm. Error: {e}")
+                target_file_path = file_path
 
-                with open(wav_path, "rb") as audio_file:
+            try:
+                with open(target_file_path, "rb") as audio_file:
                     kwargs = {
                         "model": "whisper-1", 
                         "file": audio_file

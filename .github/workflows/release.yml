@@ -56,7 +56,7 @@ jobs:
           fi
           pip install -r requirements.txt
           pip install pyinstaller
-          pyinstaller --name api --onefile --hidden-import="websockets" --hidden-import="fastapi" --hidden-import="uvicorn" execution/api.py
+          pyinstaller --name api --onefile --hidden-import="websockets" --hidden-import="fastapi" --hidden-import="uvicorn" --hidden-import="pydub" execution/api.py
         shell: bash
 
       - name: Bundle API into Electron base system
