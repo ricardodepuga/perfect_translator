@@ -11,8 +11,8 @@ const isHallucinatedText = (text) => {
   const lower = text.toLowerCase().trim().replace(/[.\-?!,]/g, "");
   const exactMatches = [
      "tężcy", "теща", "allah'a emanet olun", "you",
-     "teste", "test", "testing", "e aí", "e ai", "tchau", "obrigado", 
-     "unknown", "silêncio", "amém", "amem", "ótimo", "otimo",
+     "teste", "test", "testing", "e aí", "e ai", 
+     "unknown", "silêncio", "amém", "amem",
      "jai mloknath", "dişlerim döküldü"
   ];
   if (exactMatches.includes(lower)) return true;
@@ -482,7 +482,7 @@ function App() {
       />
 
       {/* Main Content: History List */}
-      <div className="w-full flex-grow flex flex-col items-center justify-start space-y-6 px-4 pb-48 pt-32 overflow-y-auto">
+      <div className="w-full flex-grow flex flex-col items-center justify-center space-y-8 px-4 pb-48 pt-12 overflow-y-auto">
         
         {/* Floating Active Realtime Block */}
         {activeRealtime && isListening && (
@@ -493,6 +493,7 @@ function App() {
               final={activeRealtime.final}
               showOriginal={showOriginal}
               showPivotText={showPivotText && usePivot}
+              isLatest={true}
             />
           </div>
         )}
@@ -521,6 +522,7 @@ function App() {
               final={item.final}
               showOriginal={showOriginal}
               showPivotText={showPivotText && usePivot}
+              isLatest={index === 0 && !activeRealtime}
             />
           </div>
           );

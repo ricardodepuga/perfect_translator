@@ -2,8 +2,8 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 
 const SILENCE_THRESHOLD = 0.02;     // Increased to 0.02 to ensure fan noise is ignored
 const SILENCE_DURATION_MS = 600;    // Cut in half to slice segments instantly after speech stops
-const MIN_SPEECH_DURATION_MS = 400; // Increased to drop millisecond clicks
-const MAX_SPEECH_DURATION_MS = 6000; // Force slice every 6 seconds inside continuous monologues
+const MIN_SPEECH_DURATION_MS = 150; // Reduced to 150ms to allow short words like "ok"
+const MAX_SPEECH_DURATION_MS = 5000; // Force slice every 5 seconds inside continuous monologues
 
 const AudioRecorder = ({ onAudioData, isActive, selectedDeviceId, useRealtime }) => {
   const streamRef = useRef(null);
