@@ -23,8 +23,8 @@ jobs:
             electron_target: '--mac --arm64'
             artifact_name: mac-arm64
             python_arch: 'arm64'
-          - os: macos-13
-            # Force x64 Python environment on a native Intel runner (macos-13)
+          - os: macos-latest
+            # Force x64 Python environment so Rosetta 2 builds an Intel binary natively
             electron_target: '--mac --x64'
             artifact_name: mac-x64
             python_arch: 'x64'
