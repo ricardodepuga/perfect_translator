@@ -23,8 +23,8 @@ jobs:
             electron_target: '--mac --arm64'
             artifact_name: mac-arm64
             python_arch: 'arm64'
-          - os: macos-latest
-            # Force x64 Python environment so Rosetta 2 builds an Intel binary natively
+          - os: macos-13
+            # Force x64 Python environment on a native Intel runner (macos-13)
             electron_target: '--mac --x64'
             artifact_name: mac-x64
             python_arch: 'x64'
@@ -56,7 +56,7 @@ jobs:
           fi
           pip install -r requirements.txt
           pip install pyinstaller
-          pyinstaller --name api --onefile --hidden-import="websockets" --hidden-import="fastapi" --hidden-import="uvicorn" --hidden-import="pydub" execution/api.py
+          pyinstaller --name api --onefile --collect-all uvicorn --collect-all fastapi --collect-all pydantic --hidden-import="websockets" --hidden-import="pydub" --hidden-import="multipart" execution/api.py
         shell: bash
 
       - name: Bundle API into Electron base system
